@@ -1,87 +1,47 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat Widget Integration</title>
-    <link href="https://cdn.jsdelivr.net/npm/@n8n/chat/dist/style.css" rel="stylesheet" />
-    <script type="module">
-        import { createChat } from 'https://cdn.jsdelivr.net/npm/@n8n/chat/dist/chat.bundle.es.js';
-        
-        // Hide n8n's default toggle button
-        const style = document.createElement('style');
-        style.innerHTML = `
-            .n8n-chat-toggle { display: none !important; }
-        `;
-        document.head.appendChild(style);
+<script>
+  var vapiInstance = null;
+  const assistant = "afa7ab83-0e0b-4895-8bcf-1726205ee9dc"; // Substitute with your assistant ID
+  const apiKey = "74f983f2-3303-4e57-a098-6c191d3618e1"; // Substitute with your Public key from Vapi Dashboard.
+  
+  const buttonConfig = {
+      position: "bottom-right",
+      offset: "40px",
+      width: "50px",
+      height: "50px",
+      idle: {
+          color: `rgb(93, 254, 202)`, 
+          type: "pill", 
+          title: "Have a quick question?", 
+          subtitle: "Talk with our AI assistant", 
+          icon: `https://unpkg.com/lucide-static@0.321.0/icons/phone.svg`,
+      }
+  };
 
-        // Initialize n8n chat widget without default toggle button
-        const chatInstance = createChat({
-            webhookUrl: 'https://n8ncloud2.onrender.com/webhook/2f82c208-de56-4c9d-8028-c5bfbe4f1428/chat',
-            mode: 'window',
-            showWelcomeScreen: false,
-            initialMessages: [],
-            i18n: {
-                en: {
-                    title: 'Welcome to RichardLaw&Co! 👋',
-                    subtitle: "Start a chat. We're here to help you 24/7.",
-                    inputPlaceholder: 'Type your question...'
-                },
-            }
-        });
-    </script>
-    
-    <script>
-        var vapiInstance = null;
-        const assistant = "afa7ab83-0e0b-4895-8bcf-1726205ee9dc";
-        const apiKey = "74f983f2-3303-4e57-a098-6c191d3618e1";
-        const buttonConfig = {
-            position: "bottom-right",
-            offset: "40px",
-            width: "50px",
-            height: "50px",
-            idle: {
-                color: `rgb(93, 254, 202)`,
-                type: "pill",
-                title: "Have a quick question?",
-                subtitle: "Talk with our AI assistant",
-                icon: `https://unpkg.com/lucide-static@0.321.0/icons/phone.svg`,
-            }
-        };
-        
-        // Create the Vapi button
-        window.onload = function () {
-            const vapiButton = document.createElement('div');
-            vapiButton.style.position = 'fixed';
-            vapiButton.style.bottom = buttonConfig.offset;
-            vapiButton.style.right = buttonConfig.offset;
-            vapiButton.style.background = buttonConfig.idle.color;
-            vapiButton.style.width = buttonConfig.width;
-            vapiButton.style.height = buttonConfig.height;
-            vapiButton.style.borderRadius = buttonConfig.idle.type === 'pill' ? '20px' : '50%';
-            vapiButton.style.display = 'flex';
-            vapiButton.style.alignItems = 'center';
-            vapiButton.style.justifyContent = 'center';
-            vapiButton.style.cursor = 'pointer';
-            vapiButton.style.boxShadow = '0px 4px 6px rgba(0, 0, 0, 0.1)';
-            
-            const buttonText = document.createElement('div');
-            buttonText.innerText = buttonConfig.idle.title + '\n' + buttonConfig.idle.subtitle;
-            buttonText.style.fontSize = '12px';
-            buttonText.style.color = '#000';
-            buttonText.style.textAlign = 'center';
-            buttonText.style.marginLeft = '5px';
-            
-            vapiButton.appendChild(buttonText);
-            document.body.appendChild(vapiButton);
-            
-            // When Vapi button is clicked, open n8n chat
-            vapiButton.addEventListener('click', () => {
-                document.querySelector('.n8n-chat-container').classList.add('n8n-chat-open');
-            });
-        };
-    </script>
-</head>
-<body>
-</body>
-</html>
+  document.addEventListener("DOMContentLoaded", function () {
+      // Initialize Vapi widget
+      vapiInstance = new VapiWidget(assistant, apiKey, buttonConfig);
+
+      // Load n8n chat widget without default toggle button
+      const style = document.createElement('style');
+      style.innerHTML = `
+          #n8n-chat-toggle { display: none !important; }
+      `;
+      document.head.appendChild(style);
+
+      import("https://cdn.jsdelivr.net/npm/@n8n/chat/dist/chat.bundle.es.js").then(({ createChat }) => {
+          const chatInstance = createChat({
+              webhookUrl: 'https://n8ncloud2.onrender.com/webhook/2f82c208-de56-4c9d-8028-c5bfbe4f1428/chat',
+              mode: 'window',
+              showWelcomeScreen: false,
+          });
+
+          // Open n8n chat when Vapi toggle button is clicked
+          const vapiButton = document.querySelector('.vapi-widget-button');
+          if (vapiButton) {
+              vapiButton.addEventListener('click', () => {
+                  chatInstance.open();
+              });
+          }
+      });
+  });
+</script>
