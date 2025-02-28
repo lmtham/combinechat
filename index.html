@@ -2,7 +2,7 @@
   var vapiInstance = null;
   const assistant = "afa7ab83-0e0b-4895-8bcf-1726205ee9dc"; // Substitute with your assistant ID
   const apiKey = "74f983f2-3303-4e57-a098-6c191d3618e1"; // Substitute with your Public key from Vapi Dashboard.
-  
+
   const buttonConfig = {
       position: "bottom-right",
       offset: "40px",
@@ -21,7 +21,7 @@
       // Initialize Vapi widget
       vapiInstance = new VapiWidget(assistant, apiKey, buttonConfig);
 
-      // Load n8n chat widget without default toggle button
+      // Hide n8n chat's default toggle button completely
       const style = document.createElement('style');
       style.innerHTML = `
           #n8n-chat-toggle { display: none !important; }
@@ -35,13 +35,16 @@
               showWelcomeScreen: false,
           });
 
-          // Open n8n chat when Vapi toggle button is clicked
-          const vapiButton = document.querySelector('.vapi-widget-button');
-          if (vapiButton) {
-              vapiButton.addEventListener('click', () => {
-                  chatInstance.open();
-              });
-          }
+          // Ensure n8n chat opens only when Vapi toggle button is clicked
+          const checkVapiButton = setInterval(() => {
+              const vapiButton = document.querySelector('.vapi-widget-button');
+              if (vapiButton) {
+                  clearInterval(checkVapiButton);
+                  vapiButton.addEventListener('click', () => {
+                      chatInstance.open();
+                  });
+              }
+          }, 500); // Retry every 500ms until Vapi button is available
       });
   });
 </script>
