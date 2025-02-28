@@ -3,45 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat Widget</title>
+    <title>n8n Chat Widget</title>
     <link href="https://cdn.jsdelivr.net/npm/@n8n/chat/dist/style.css" rel="stylesheet" />
     <style>
-        /* Custom styling for rectangular toggle button */
-        .n8n-chat-toggle-button {
-            width: 120px !important;
-            height: 50px !important;
-            border-radius: 5px !important;
-            background-color: #20b69e !important;
-            color: #fff !important;
-            font-size: 1rem !important;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+        :root {
+            --chat--toggle--background: #ffb6c1; /* Light pink */
+            --chat--toggle--hover--background: #ffa3b0; /* Slightly darker pink on hover */
+            --chat--toggle--active--background: #ff8fa0; /* Darker pink on active */
+            --chat--toggle--border-radius: 0; /* Rectangular shape */
+            --chat--toggle--size: 80px; /* Adjust size if needed */
+            --chat--window--width: 650px; /* Wider window */
+            --chat--window--height: 110vh; /* Taller window for more chat history */
+            --chat--spacing: 0.5rem;
+            --chat--border-radius: 0.20rem;
+            --chat--header-height: auto; /* Smaller header */
+            --chat--header--padding: var(--chat--spacing); /* Less padding */
+            --chat--heading--font-size: 1.4em; /* Smaller font for header */
+            --chat--subtitle--font-size: 0.9em; /* Smaller subtitle font */
+            --chat--message--font-size: 0.8rem; /* Smaller font for messages */
+            --chat--textarea--height: 65px; /* Input box height */
         }
     </style>
 </head>
 <body>
     <script type="module">
-        const style = document.createElement('style');
-        style.innerHTML = `
-            :root {
-                --chat--window--width: 650px;
-                --chat--window--height: 110vh;
-                --chat--spacing: 0.5rem;
-                --chat--border-radius: 0.20rem;
-                --chat--header-height: auto;
-                --chat--header--padding: var(--chat--spacing);
-                --chat--heading--font-size: 1.4em;
-                --chat--subtitle--font-size: 0.9em;
-                --chat--message--font-size: 0.8rem;
-                --chat--textarea--height: 65px;
-                --chat--toggle--size: 64px;
-            }
-        `;
-        document.head.appendChild(style);
-
         import { createChat } from 'https://cdn.jsdelivr.net/npm/@n8n/chat/dist/chat.bundle.es.js';
-
+        
         createChat({
             webhookUrl: 'https://n8ncloud2.onrender.com/webhook/2f82c208-de56-4c9d-8028-c5bfbe4f1428/chat',
             mode: 'window',
@@ -72,6 +59,7 @@
                 startButton.style.color = '#fff';
                 startButton.style.fontSize = '1.2em';
 
+                const chatHistory = chatWindow.querySelector('.n8n-chat-history');
                 const header = chatWindow.querySelector('.n8n-chat-header');
                 header.appendChild(startButton);
 
