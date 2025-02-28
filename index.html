@@ -3,42 +3,63 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>n8n Chat Widget</title>
+    <title>Chat Widget</title>
     <link href="https://cdn.jsdelivr.net/npm/@n8n/chat/dist/style.css" rel="stylesheet" />
     <style>
         :root {
-            --chat--toggle--background: #ffb6c1; /* Light pink */
-            --chat--toggle--hover--background: #ffa3b0; /* Slightly darker pink on hover */
-            --chat--toggle--active--background: #ff8fa0; /* Darker pink on active */
-            --chat--toggle--border-radius: 0; /* Rectangular shape */
-            --chat--toggle--size: 80px; /* Adjust size if needed */
-            --chat--window--width: 650px; /* Wider window */
-            --chat--window--height: 110vh; /* Taller window for more chat history */
+            --chat--window--width: 650px;
+            --chat--window--height: 110vh;
             --chat--spacing: 0.5rem;
             --chat--border-radius: 0.20rem;
-            --chat--header-height: auto; /* Smaller header */
-            --chat--header--padding: var(--chat--spacing); /* Less padding */
-            --chat--heading--font-size: 1.4em; /* Smaller font for header */
-            --chat--subtitle--font-size: 0.9em; /* Smaller subtitle font */
-            --chat--message--font-size: 0.8rem; /* Smaller font for messages */
-            --chat--textarea--height: 65px; /* Input box height */
+            --chat--header-height: auto;
+            --chat--header--padding: var(--chat--spacing);
+            --chat--heading--font-size: 1.4em;
+            --chat--subtitle--font-size: 0.9em;
+            --chat--message--font-size: 0.8rem;
+            --chat--textarea--height: 65px;
+            --chat--toggle--size: auto; /* Allow custom sizing */
+            --chat--toggle--background: #5dfece; /* Match Vapi color */
+            --chat--toggle--hover--background: #4edab5;
+            --chat--toggle--color: #000;
+            --chat--toggle--border-radius: 30px; /* Pill shape */
         }
-        .chat-toggle {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            padding: 10px;
+        .custom-chat-toggle {
+            position: fixed;
+            bottom: 40px;
+            right: 40px;
+            background-color: var(--chat--toggle--background);
+            color: var(--chat--toggle--color);
+            border-radius: var(--chat--toggle--border-radius);
+            padding: 10px 20px;
             font-size: 14px;
-            color: white;
+            display: flex;
+            align-items: center;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .custom-chat-toggle:hover {
+            background-color: var(--chat--toggle--hover--background);
+        }
+        .custom-chat-toggle img {
+            width: 20px;
+            height: 20px;
+            margin-right: 10px;
         }
     </style>
 </head>
 <body>
+    <div id="chat-toggle" class="custom-chat-toggle">
+        <img src="https://unpkg.com/lucide-static@0.321.0/icons/message-circle.svg" alt="Chat Icon">
+        <div>
+            <div>Have a quick question?</div>
+            <small>Talk with our AI assistant</small>
+        </div>
+    </div>
+
     <script type="module">
         import { createChat } from 'https://cdn.jsdelivr.net/npm/@n8n/chat/dist/chat.bundle.es.js';
-        
+
         createChat({
             webhookUrl: 'https://n8ncloud2.onrender.com/webhook/2f82c208-de56-4c9d-8028-c5bfbe4f1428/chat',
             mode: 'window',
@@ -51,41 +72,11 @@
                     title: 'Welcome to RichardLaw&Co!👋',
                     subtitle: "Start a chat. We're here to help you 24/7.",
                 },
-            },
-            styleOverrides: {
-                '--chat--message--font-size': '0.75rem',
-            },
-            onLoad: (chatWindow) => {
-                const chatInput = chatWindow.querySelector('textarea');
-                chatInput.style.display = 'none';
+            }
+        });
 
-                const startButton = document.createElement('button');
-                startButton.innerText = 'Start New Conversation';
-                startButton.style.width = '100%';
-                startButton.style.padding = '10px';
-                startButton.style.textAlign = 'center';
-                startButton.style.backgroundColor = '#20b69e';
-                startButton.style.border = 'none';
-                startButton.style.color = '#fff';
-                startButton.style.fontSize = '1.2em';
-
-                const chatHistory = chatWindow.querySelector('.n8n-chat-history');
-                const header = chatWindow.querySelector('.n8n-chat-header');
-                header.appendChild(startButton);
-
-                startButton.addEventListener('click', () => {
-                    chatWindow.sendMessage('Hi there! 👋 How can I assist you today?');
-                    startButton.style.display = 'none';
-                    chatInput.style.display = 'block';
-                    chatInput.focus();
-                });
-
-                // Modify chat toggle button text
-                const chatToggle = document.querySelector('.n8n-chat-toggle');
-                if (chatToggle) {
-                    chatToggle.innerHTML = '<div class="chat-toggle">Have a quick question?<br>Talk with our AI assistant</div>';
-                }
-            },
+        document.getElementById('chat-toggle').addEventListener('click', () => {
+            document.querySelector('#n8n-chat').click();
         });
     </script>
 </body>
