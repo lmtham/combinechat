@@ -1,48 +1,118 @@
-<script>
-  document.addEventListener("DOMContentLoaded", function () {
-      // Step 1: Initialize Vapi Chat Widget
-      const assistant = "afa7ab83-0e0b-4895-8bcf-1726205ee9dc"; // Replace with your assistant ID
-      const apiKey = "74f983f2-3303-4e57-a098-6c191d3618e1"; // Replace with your public API key
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Widget</title>
+    <link href="https://cdn.jsdelivr.net/npm/@n8n/chat/dist/style.css" rel="stylesheet" />
+    <style>
+        :root {
+            --chat--window--width: 650px;
+            --chat--window--height: 110vh;
+            --chat--spacing: 0.5rem;
+            --chat--border-radius: 0.20rem;
+            --chat--header-height: auto;
+            --chat--header--padding: var(--chat--spacing);
+            --chat--heading--font-size: 1.4em;
+            --chat--subtitle--font-size: 0.9em;
+            --chat--message--font-size: 0.8rem;
+            --chat--textarea--height: 65px;
+            --chat--toggle--size: auto; /* Allow custom sizing */
+            --chat--toggle--background: #5dfece; /* Match Vapi color */
+            --chat--toggle--hover--background: #4edab5;
+            --chat--toggle--color: #000;
+            --chat--toggle--border-radius: 30px; /* Pill shape */
+        }
+        .custom-chat-toggle {
+            position: fixed;
+            bottom: 40px;
+            right: 40px;
+            background-color: var(--chat--toggle--background);
+            color: var(--chat--toggle--color);
+            border-radius: var(--chat--toggle--border-radius);
+            padding: 10px 20px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+            transition: background 0.3s;
+            z-index: 999;
+        }
+        .custom-chat-toggle:hover {
+            background-color: var(--chat--toggle--hover--background);
+        }
+        .custom-chat-toggle img {
+            width: 20px;
+            height: 20px;
+            margin-right: 10px;
+        }
+        /* Hide the default n8n toggle button */
+        #n8n-chat-toggle {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <div id="chat-toggle" class="custom-chat-toggle">
+        <img src="https://unpkg.com/lucide-static@0.321.0/icons/message-circle.svg" alt="Chat Icon">
+        <div>
+            <div>Have a quick question?</div>
+            <small>Talk with our AI assistant</small>
+        </div>
+    </div>
+    <script type="module">
+        import { createChat } from 'https://cdn.jsdelivr.net/npm/@n8n/chat/dist/chat.bundle.es.js';
+        
+        // Initialize n8n chat widget
+        const chat = createChat({
+            webhookUrl: 'https://n8ncloud2.onrender.com/webhook/2f82c208-de56-4c9d-8028-c5bfbe4f1428/chat',
+            mode: 'fullscreen',
+            showWelcomeScreen: false,
+            initialMessages: [],
+            i18n: {
+                en: {
+                    getStarted: 'Start New Conversation',
+                    inputPlaceholder: 'Type your question..',
+                    title: 'Welcome to RichardLaw&Co!👋',
+                    subtitle: "Start a chat. We're here to help you 24/7.",
+                },
+            }
+        });
 
-      const buttonConfig = {
-          position: "bottom-right",
-          offset: "40px",
-          width: "50px",
-          height: "50px",
-          idle: {
-              color: `rgb(93, 254, 202)`, 
-              type: "pill", 
-              title: "Have a quick question?", 
-              subtitle: "Talk with our AI assistant",
-              icon: `https://unpkg.com/lucide-static@0.321.0/icons/message-square.svg`,
-          }
-      };
+        // Get reference to the Vapi toggle button
+        const vapiToggle = document.getElementById('chat-toggle');
+        
+        // Add event listener to Vapi toggle button
+        vapiToggle.addEventListener('click', () => {
+            // Toggle the n8n chat window
+            const chatWindow = document.querySelector('#n8n-chat-window');
+            if (chatWindow) {
+                const isHidden = chatWindow.getAttribute('aria-hidden') === 'true';
+                if (isHidden) {
+                    chat.open();
+                } else {
+                    chat.close();
+                }
+            } else {
+                chat.open();
+            }
+        });
 
-      const vapiInstance = new VapiWidget(assistant, apiKey, buttonConfig);
+        // Hide the default n8n toggle button once it's loaded
+        const observer = new MutationObserver((mutations, obs) => {
+            const n8nToggle = document.querySelector('#n8n-chat-toggle');
+            if (n8nToggle) {
+                n8nToggle.style.display = 'none';
+                obs.disconnect(); // Stop observing once we've hidden the button
+            }
+        });
 
-      // Step 2: Hide n8n's default toggle button completely
-      const style = document.createElement('style');
-      style.innerHTML = `#n8n-chat-toggle { display: none !important; }`;
-      document.head.appendChild(style);
-
-      // Step 3: Load n8n chat widget without toggle button
-      import("https://cdn.jsdelivr.net/npm/@n8n/chat/dist/chat.bundle.es.js").then(({ createChat }) => {
-          const chatInstance = createChat({
-              webhookUrl: 'https://n8ncloud2.onrender.com/webhook/2f82c208-de56-4c9d-8028-c5bfbe4f1428/chat',
-              mode: 'window',
-              showWelcomeScreen: false,
-          });
-
-          // Step 4: Ensure clicking Vapi button opens n8n chat
-          const checkVapiButton = setInterval(() => {
-              const vapiButton = document.querySelector('.vapi-widget-button');
-              if (vapiButton) {
-                  clearInterval(checkVapiButton);
-                  vapiButton.addEventListener('click', () => {
-                      chatInstance.open();
-                  });
-              }
-          }, 500);
-      });
-  });
-</script>
+        // Start observing the document body for the n8n toggle button
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
+    </script>
+</body>
+</html>
