@@ -47,8 +47,11 @@
             height: 20px;
             margin-right: 10px;
         }
-        /* Hide the default n8n toggle button */
+        /* Hide the default n8n toggle button and window initially */
         #n8n-chat-toggle {
+            display: none !important;
+        }
+        #n8n-chat-window {
             display: none !important;
         }
     </style>
@@ -64,27 +67,53 @@
     <script type="module">
         import { createChat } from 'https://cdn.jsdelivr.net/npm/@n8n/chat/dist/chat.bundle.es.js';
         
-        // Initialize n8n chat widget
-        const chat = createChat({
-            webhookUrl: 'https://n8ncloud2.onrender.com/webhook/2f82c208-de56-4c9d-8028-c5bfbe4f1428/chat',
-            mode: 'fullscreen',
-            showWelcomeScreen: false,
-            initialMessages: [],
-            i18n: {
-                en: {
-                    getStarted: 'Start New Conversation',
-                    inputPlaceholder: 'Type your question..',
-                    title: 'Welcome to RichardLaw&Co!👋',
-                    subtitle: "Start a chat. We're here to help you 24/7.",
-                },
-            }
-        });
-
+        let chatInitialized = false;
+        let chatInstance = null;
+        
+        // Initialize n8n chat widget but keep it hidden initially
+        function initializeChat() {
+            if (chatInitialized) return chatInstance;
+            
+            chatInstance = createChat({
+                webhookUrl: 'https://n8ncloud2.onrender.com/webhook/2f82c208-de56-4c9d-8028-c5bfbe4f1428/chat',
+                mode: 'fullscreen',
+                showWelcomeScreen: false,
+                initialMessages: [],
+                i18n: {
+                    en: {
+                        getStarted: 'Start New Conversation',
+                        inputPlaceholder: 'Type your question..',
+                        title: 'Welcome to RichardLaw&Co!👋',
+                        subtitle: "Start a chat. We're here to help you 24/7.",
+                    },
+                }
+            });
+            
+            // Immediately close the chat window after initialization
+            setTimeout(() => {
+                if (chatInstance && typeof chatInstance.close === 'function') {
+                    chatInstance.close();
+                }
+                
+                // Remove the display:none style from chat window to allow proper toggling
+                const chatWindow = document.querySelector('#n8n-chat-window');
+                if (chatWindow) {
+                    chatWindow.style.removeProperty('display');
+                }
+            }, 100);
+            
+            chatInitialized = true;
+            return chatInstance;
+        }
+        
         // Get reference to the Vapi toggle button
         const vapiToggle = document.getElementById('chat-toggle');
         
         // Add event listener to Vapi toggle button
         vapiToggle.addEventListener('click', () => {
+            // Initialize chat if not already done
+            const chat = initializeChat();
+            
             // Toggle the n8n chat window
             const chatWindow = document.querySelector('#n8n-chat-window');
             if (chatWindow) {
@@ -95,16 +124,20 @@
                     chat.close();
                 }
             } else {
-                chat.open();
+                setTimeout(() => {
+                    const newChatWindow = document.querySelector('#n8n-chat-window');
+                    if (newChatWindow) {
+                        chat.open();
+                    }
+                }, 200);
             }
         });
 
-        // Hide the default n8n toggle button once it's loaded
+        // Hide the default n8n toggle button
         const observer = new MutationObserver((mutations, obs) => {
             const n8nToggle = document.querySelector('#n8n-chat-toggle');
             if (n8nToggle) {
                 n8nToggle.style.display = 'none';
-                obs.disconnect(); // Stop observing once we've hidden the button
             }
         });
 
