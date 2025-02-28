@@ -23,6 +23,16 @@
             --chat--message--font-size: 0.8rem; /* Smaller font for messages */
             --chat--textarea--height: 65px; /* Input box height */
         }
+        .chat-toggle {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 10px;
+            font-size: 14px;
+            color: white;
+        }
     </style>
 </head>
 <body>
@@ -69,6 +79,12 @@
                     chatInput.style.display = 'block';
                     chatInput.focus();
                 });
+
+                // Modify chat toggle button text
+                const chatToggle = document.querySelector('.n8n-chat-toggle');
+                if (chatToggle) {
+                    chatToggle.innerHTML = '<div class="chat-toggle">Have a quick question?<br>Talk with our AI assistant</div>';
+                }
             },
         });
     </script>
