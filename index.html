@@ -1,151 +1,60 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat Widget</title>
-    <link href="https://cdn.jsdelivr.net/npm/@n8n/chat/dist/style.css" rel="stylesheet" />
-    <style>
-        :root {
-            --chat--window--width: 650px;
-            --chat--window--height: 110vh;
-            --chat--spacing: 0.5rem;
-            --chat--border-radius: 0.20rem;
-            --chat--header-height: auto;
-            --chat--header--padding: var(--chat--spacing);
-            --chat--heading--font-size: 1.4em;
-            --chat--subtitle--font-size: 0.9em;
-            --chat--message--font-size: 0.8rem;
-            --chat--textarea--height: 65px;
-            --chat--toggle--size: auto; /* Allow custom sizing */
-            --chat--toggle--background: #5dfece; /* Match Vapi color */
-            --chat--toggle--hover--background: #4edab5;
-            --chat--toggle--color: #000;
-            --chat--toggle--border-radius: 30px; /* Pill shape */
-        }
-        .custom-chat-toggle {
-            position: fixed;
-            bottom: 40px;
-            right: 40px;
-            background-color: var(--chat--toggle--background);
-            color: var(--chat--toggle--color);
-            border-radius: var(--chat--toggle--border-radius);
-            padding: 10px 20px;
-            font-size: 14px;
-            display: flex;
-            align-items: center;
-            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
-            cursor: pointer;
-            transition: background 0.3s;
-            z-index: 999;
-        }
-        .custom-chat-toggle:hover {
-            background-color: var(--chat--toggle--hover--background);
-        }
-        .custom-chat-toggle img {
-            width: 20px;
-            height: 20px;
-            margin-right: 10px;
-        }
-        /* Hide the default n8n toggle button and window initially */
-        #n8n-chat-toggle {
-            display: none !important;
-        }
-        #n8n-chat-window {
-            display: none !important;
-        }
-    </style>
-</head>
-<body>
-    <div id="chat-toggle" class="custom-chat-toggle">
-        <img src="https://unpkg.com/lucide-static@0.321.0/icons/message-circle.svg" alt="Chat Icon">
-        <div>
-            <div>Have a quick question?</div>
-            <small>Talk with our AI assistant</small>
-        </div>
-    </div>
-    <script type="module">
-        import { createChat } from 'https://cdn.jsdelivr.net/npm/@n8n/chat/dist/chat.bundle.es.js';
-        
-        let chatInitialized = false;
-        let chatInstance = null;
-        
-        // Initialize n8n chat widget but keep it hidden initially
-        function initializeChat() {
-            if (chatInitialized) return chatInstance;
-            
-            chatInstance = createChat({
-                webhookUrl: 'https://n8ncloud2.onrender.com/webhook/2f82c208-de56-4c9d-8028-c5bfbe4f1428/chat',
-                mode: 'fullscreen',
-                showWelcomeScreen: false,
-                initialMessages: [],
-                i18n: {
-                    en: {
-                        getStarted: 'Start New Conversation',
-                        inputPlaceholder: 'Type your question..',
-                        title: 'Welcome to RichardLaw&Co!👋',
-                        subtitle: "Start a chat. We're here to help you 24/7.",
-                    },
-                }
-            });
-            
-            // Immediately close the chat window after initialization
-            setTimeout(() => {
-                if (chatInstance && typeof chatInstance.close === 'function') {
-                    chatInstance.close();
-                }
-                
-                // Remove the display:none style from chat window to allow proper toggling
-                const chatWindow = document.querySelector('#n8n-chat-window');
-                if (chatWindow) {
-                    chatWindow.style.removeProperty('display');
-                }
-            }, 100);
-            
-            chatInitialized = true;
-            return chatInstance;
-        }
-        
-        // Get reference to the Vapi toggle button
-        const vapiToggle = document.getElementById('chat-toggle');
-        
-        // Add event listener to Vapi toggle button
-        vapiToggle.addEventListener('click', () => {
-            // Initialize chat if not already done
-            const chat = initializeChat();
-            
-            // Toggle the n8n chat window
-            const chatWindow = document.querySelector('#n8n-chat-window');
-            if (chatWindow) {
-                const isHidden = chatWindow.getAttribute('aria-hidden') === 'true';
-                if (isHidden) {
-                    chat.open();
-                } else {
-                    chat.close();
-                }
-            } else {
-                setTimeout(() => {
-                    const newChatWindow = document.querySelector('#n8n-chat-window');
-                    if (newChatWindow) {
-                        chat.open();
-                    }
-                }, 200);
-            }
-        });
+<button id="start-recording">🎤 Start Recording</button>
+<button id="stop-recording" disabled>⏹ Stop</button>
+<p id="transcription"></p>
 
-        // Hide the default n8n toggle button
-        const observer = new MutationObserver((mutations, obs) => {
-            const n8nToggle = document.querySelector('#n8n-chat-toggle');
-            if (n8nToggle) {
-                n8nToggle.style.display = 'none';
-            }
-        });
+<script>
+const deepgramUrl = "wss://api.deepgram.com/v1/listen?access_token=4563a2200b751d0d6b02a2e358d0f05ff21a81b5";
+const n8nWebhookUrl = "YOUR_N8N_WEBHOOK_URL";
 
-        // Start observing the document body for the n8n toggle button
-        observer.observe(document.body, {
-            childList: true,
-            subtree: true
-        });
-    </script>
-</body>
-</html>
+let mediaRecorder;
+let socket;
+
+document.getElementById("start-recording").addEventListener("click", async () => {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const audioContext = new AudioContext();
+    const source = audioContext.createMediaStreamSource(stream);
+    const processor = audioContext.createScriptProcessor(4096, 1, 1);
+
+    socket = new WebSocket(deepgramUrl);
+    socket.onopen = () => console.log("Connected to Deepgram");
+    socket.onmessage = async (event) => {
+        const data = JSON.parse(event.data);
+        if (data.channel?.alternatives[0]?.transcript) {
+            document.getElementById("transcription").innerText = data.channel.alternatives[0].transcript;
+            sendToN8N(data.channel.alternatives[0].transcript);
+        }
+    };
+
+    processor.onaudioprocess = (e) => {
+        if (socket.readyState === WebSocket.OPEN) {
+            socket.send(e.inputBuffer.getChannelData(0));
+        }
+    };
+
+    source.connect(processor);
+    processor.connect(audioContext.destination);
+    
+    mediaRecorder = { stream, audioContext, processor, source };  
+    document.getElementById("start-recording").disabled = true;
+    document.getElementById("stop-recording").disabled = false;
+});
+
+document.getElementById("stop-recording").addEventListener("click", () => {
+    if (mediaRecorder) {
+        mediaRecorder.stream.getTracks().forEach(track => track.stop());
+        mediaRecorder.processor.disconnect();
+        mediaRecorder.source.disconnect();
+        socket.close();
+    }
+    document.getElementById("start-recording").disabled = false;
+    document.getElementById("stop-recording").disabled = true;
+});
+
+async function sendToN8N(transcript) {
+    await fetch(n8nWebhookUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: transcript }),
+    });
+}
+</script>
