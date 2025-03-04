@@ -1,60 +1,111 @@
-<button id="start-recording">🎤 Start Recording</button>
-<button id="stop-recording" disabled>⏹ Stop</button>
-<p id="transcription"></p>
-
-<script>
-const deepgramUrl = "wss://api.deepgram.com/v1/listen?access_token=4563a2200b751d0d6b02a2e358d0f05ff21a81b5";
-const n8nWebhookUrl = "YOUR_N8N_WEBHOOK_URL";
-
-let mediaRecorder;
-let socket;
-
-document.getElementById("start-recording").addEventListener("click", async () => {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    const audioContext = new AudioContext();
-    const source = audioContext.createMediaStreamSource(stream);
-    const processor = audioContext.createScriptProcessor(4096, 1, 1);
-
-    socket = new WebSocket(deepgramUrl);
-    socket.onopen = () => console.log("Connected to Deepgram");
-    socket.onmessage = async (event) => {
-        const data = JSON.parse(event.data);
-        if (data.channel?.alternatives[0]?.transcript) {
-            document.getElementById("transcription").innerText = data.channel.alternatives[0].transcript;
-            sendToN8N(data.channel.alternatives[0].transcript);
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deepgram Live Transcription</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin-top: 50px;
         }
-    };
-
-    processor.onaudioprocess = (e) => {
-        if (socket.readyState === WebSocket.OPEN) {
-            socket.send(e.inputBuffer.getChannelData(0));
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            border: none;
+            color: white;
+            border-radius: 5px;
         }
-    };
+        .start { background-color: green; }
+        .stop { background-color: red; }
+        #transcription {
+            margin-top: 20px;
+            font-size: 18px;
+            font-weight: bold;
+            white-space: pre-wrap;
+        }
+    </style>
+    <script src="https://unpkg.com/@deepgram/sdk"></script>
+</head>
+<body>
 
-    source.connect(processor);
-    processor.connect(audioContext.destination);
-    
-    mediaRecorder = { stream, audioContext, processor, source };  
-    document.getElementById("start-recording").disabled = true;
-    document.getElementById("stop-recording").disabled = false;
-});
+    <h1>Deepgram Live Voice Agent</h1>
+    <button id="recordButton" class="start">🎤 Start Recording</button>
+    <p id="transcription">Live transcription will appear here...</p>
 
-document.getElementById("stop-recording").addEventListener("click", () => {
-    if (mediaRecorder) {
-        mediaRecorder.stream.getTracks().forEach(track => track.stop());
-        mediaRecorder.processor.disconnect();
-        mediaRecorder.source.disconnect();
-        socket.close();
-    }
-    document.getElementById("start-recording").disabled = false;
-    document.getElementById("stop-recording").disabled = true;
-});
+    <script>
+        let live;
+        let mediaRecorder;
+        let isRecording = false;
 
-async function sendToN8N(transcript) {
-    await fetch(n8nWebhookUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: transcript }),
-    });
-}
-</script>
+        document.getElementById("recordButton").addEventListener("click", async () => {
+            if (!isRecording) {
+                startRecording();
+            } else {
+                stopRecording();
+            }
+        });
+
+        async function startRecording() {
+            document.getElementById("recordButton").innerText = "⏹ Stop Recording";
+            document.getElementById("recordButton").classList.remove("start");
+            document.getElementById("recordButton").classList.add("stop");
+            document.getElementById("transcription").innerText = "Listening...";
+
+            isRecording = true;
+
+            // Initialize Deepgram LiveClient
+            const { createClient, LiveTranscriptionEvents } = window["@deepgram/sdk"];
+            const deepgram = createClient("4563a2200b751d0d6b02a2e358d0f05ff21a81b5");
+            live = deepgram.listen.live({ model: "nova-3" });
+
+            // Handle transcriptions
+            live.on(LiveTranscriptionEvents.Open, async () => {
+                console.log("Connected to Deepgram");
+
+                live.on(LiveTranscriptionEvents.Transcript, (data) => {
+                    if (data.channel?.alternatives[0]?.transcript) {
+                        const transcript = data.channel.alternatives[0].transcript;
+                        document.getElementById("transcription").innerText += transcript + " ";
+                        sendToN8N(transcript);
+                    }
+                });
+
+                // Capture audio from the microphone
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+
+                mediaRecorder.ondataavailable = (event) => {
+                    if (live.getReadyState() === 1) {
+                        live.send(event.data);
+                    }
+                };
+
+                mediaRecorder.start(250); // Send data every 250ms
+            });
+        }
+
+        function stopRecording() {
+            if (live) live.requestClose();
+            if (mediaRecorder) mediaRecorder.stop();
+
+            document.getElementById("recordButton").innerText = "🎤 Start Recording";
+            document.getElementById("recordButton").classList.remove("stop");
+            document.getElementById("recordButton").classList.add("start");
+
+            isRecording = false;
+        }
+
+        async function sendToN8N(transcript) {
+            await fetch("YOUR_N8N_WEBHOOK_URL", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ text: transcript }),
+            });
+        }
+    </script>
+
+</body>
+</html>
