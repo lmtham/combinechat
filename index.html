@@ -3,86 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Live Audio Transcription</title>
-    <script src="https://unpkg.com/@deepgram/sdk"></script>
+    <title>Chat Widget</title>
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; margin: 50px; }
-        button { padding: 10px 20px; font-size: 16px; cursor: pointer; border: none; color: white; border-radius: 5px; }
-        .start { background-color: green; }
-        .stop { background-color: red; }
-        #transcription { margin-top: 20px; font-size: 18px; font-weight: bold; white-space: pre-wrap; }
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: #f9f9f9;
+        }
+        .container {
+            text-align: center;
+        }
+        h1 {
+            color: #333;
+        }
     </style>
 </head>
 <body>
+    <div class="container">
+        <h1>Welcome to TalentClik Chat</h1>
+        <p>Our AI assistant is here to help you!</p>
+    </div>
 
-    <h1>Live Stream Transcription</h1>
-    <button id="startButton" class="start">▶ Start Transcription</button>
-    <button id="stopButton" class="stop" style="display:none;">⏹ Stop</button>
-    <p id="transcription">Live transcription will appear here...</p>
-
+    <script src="https://chatty-widget-factory.lovable.app/chat-widget.js"></script>
     <script>
-        let live;
-        let isStreaming = false;
-        const audioUrl = "http://stream.live.vc.bbcmedia.co.uk/bbc_world_service"; // Audio stream URL
-
-        document.getElementById("startButton").addEventListener("click", startTranscription);
-        document.getElementById("stopButton").addEventListener("click", stopTranscription);
-
-        async function startTranscription() {
-            if (isStreaming) return;
-
-            document.getElementById("startButton").style.display = "none";
-            document.getElementById("stopButton").style.display = "inline-block";
-            document.getElementById("transcription").innerText = "Listening...";
-
-            isStreaming = true;
-
-            // Initialize Deepgram LiveClient
-            const { createClient, LiveTranscriptionEvents } = window["@deepgram/sdk"];
-            const deepgram = createClient("4563a2200b751d0d6b02a2e358d0f05ff21a81b5");
-            live = deepgram.listen.live({ model: "nova-3", language: "en-US", smart_format: true });
-
-            live.on(LiveTranscriptionEvents.Open, async () => {
-                console.log("Connected to Deepgram");
-
-                live.on(LiveTranscriptionEvents.Transcript, (data) => {
-                    if (data.channel?.alternatives[0]?.transcript) {
-                        const transcript = data.channel.alternatives[0].transcript;
-                        document.getElementById("transcription").innerText += transcript + " ";
-                    }
-                });
-
-                live.on(LiveTranscriptionEvents.Error, (err) => console.error(err));
-
-                // Fetch the audio stream and send to Deepgram
-                const response = await fetch(audioUrl);
-                const reader = response.body.getReader();
-                readStream(reader);
-            });
-        }
-
-        async function readStream(reader) {
-            while (isStreaming) {
-                const { done, value } = await reader.read();
-                if (done) break;
-                if (live.getReadyState() === 1) {
-                    live.send(value);
-                }
-            }
-        }
-
-        function stopTranscription() {
-            if (live) live.requestClose();
-            isStreaming = false;
-            document.getElementById("startButton").style.display = "inline-block";
-            document.getElementById("stopButton").style.display = "none";
-        }
+      window.addEventListener('DOMContentLoaded', function() {
+        initChatWidget('https://n8ncloud2.onrender.com/webhook/2f82c208-de56-4c9d-8028-c5bfbe4f1428/chat');
+      });
     </script>
-<script src="https://lmtham.github.io/chatty-widget-factory/"></script>
-<script>
-  window.addEventListener('DOMContentLoaded', function() {
-    initChatWidget('https://n8ncloud2.onrender.com/webhook/2f82c208-de56-4c9d-8028-c5bfbe4f1428/chat');
-  });
-</script>
 </body>
 </html>
